@@ -1,0 +1,7 @@
+data/
+datasets/
+runs/
+outputs/
+*.sqlite
+__pycache__/
+*.pyc

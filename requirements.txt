@@ -1,0 +1,13 @@
+torch
+torchvision
+ultralytics
+numpy
+pandas
+scipy
+scikit-image
+opencv-python
+matplotlib
+tqdm
+SimpleITK
+pydicom
+PySide6

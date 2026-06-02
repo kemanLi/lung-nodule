@@ -1,0 +1,22 @@
+path: datasets/detection
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: nodule
+
+preprocess:
+  hu_min: -1200
+  hu_max: 600
+  output_size: 640
+  adjacent_slices: 1
+  min_box_size: 8
+
+training:
+  detection_epochs: 80
+  detection_batch: 8
+  detection_imgsz: 640
+  segmentation_epochs: 100
+  segmentation_batch: 32
+  segmentation_lr: 0.001
