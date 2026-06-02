@@ -4,9 +4,12 @@ from pathlib import Path
 
 def train(args: argparse.Namespace) -> None:
     try:
+        from models.detection import register_yolo_custom_layers
         from ultralytics import YOLO
     except ImportError as exc:
         raise SystemExit("Please install ultralytics before training detection.") from exc
+
+    register_yolo_custom_layers()
 
     data_yaml = Path(args.data)
     if not data_yaml.exists():

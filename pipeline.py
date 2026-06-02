@@ -21,7 +21,8 @@ class Detection:
 def load_grayscale(path: str) -> np.ndarray:
     suffix = Path(path).suffix.lower()
     if suffix in {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}:
-        image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        # cv2.imread can fail on Windows paths containing non-ASCII characters.
+        image = cv2.imdecode(np.fromfile(path, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
         if image is None:
             raise FileNotFoundError(path)
         return image
@@ -49,8 +50,10 @@ def window_to_uint8(image: np.ndarray, hu_min: int = -1200, hu_max: int = 600) -
 
 
 def yolo_detect(image: np.ndarray, weights: str, conf: float) -> list[Detection]:
+    from models.detection import register_yolo_custom_layers
     from ultralytics import YOLO
 
+    register_yolo_custom_layers()
     model = YOLO(weights)
     results = model.predict(cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), conf=conf, verbose=False)
     detections: list[Detection] = []
@@ -107,11 +110,11 @@ def crop_patch(image: np.ndarray, det: Detection, size: int = 64) -> np.ndarray:
 def segment_patch(patch: np.ndarray, weights: str | None = None) -> np.ndarray:
     if weights and Path(weights).exists():
         import torch
-        from models.segmentation import UNet
+        from models.segmentation import build_segmentation_model
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ckpt = torch.load(weights, map_location=device)
-        model = UNet(base=int(ckpt.get("base", 32))).to(device)
+        model = build_segmentation_model(ckpt.get("model_type", "unet"), base=int(ckpt.get("base", 32))).to(device)
         model.load_state_dict(ckpt["model"])
         model.eval()
         tensor = torch.from_numpy((patch.astype(np.float32) / 255.0)[None, None]).to(device)

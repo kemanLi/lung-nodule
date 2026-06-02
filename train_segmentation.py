@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from models.segmentation import UNet
+from models.segmentation import build_segmentation_model
 
 
 class PatchDataset(Dataset):
@@ -46,7 +46,7 @@ def train(args: argparse.Namespace) -> None:
 
     train_loader = DataLoader(train_ds, batch_size=args.batch, shuffle=True, num_workers=args.workers)
     val_loader = DataLoader(val_ds, batch_size=args.batch, shuffle=False, num_workers=args.workers) if len(val_ds) else None
-    model = UNet(base=args.base).to(device)
+    model = build_segmentation_model(args.model_type, base=args.base).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
     bce = nn.BCEWithLogitsLoss()
 
@@ -78,10 +78,10 @@ def train(args: argparse.Namespace) -> None:
             val_loss = float(np.mean(vals))
 
         print(f"epoch={epoch} train_loss={np.mean(losses):.4f} val_loss={val_loss:.4f}")
-        torch.save({"model": model.state_dict(), "base": args.base}, out_dir / "last.pt")
+        torch.save({"model": model.state_dict(), "base": args.base, "model_type": args.model_type}, out_dir / "last.pt")
         if val_loss <= best_val:
             best_val = val_loss
-            torch.save({"model": model.state_dict(), "base": args.base}, out_dir / "best.pt")
+            torch.save({"model": model.state_dict(), "base": args.base, "model_type": args.model_type}, out_dir / "best.pt")
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,6 +94,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--base", type=int, default=32)
+    parser.add_argument(
+        "--model-type",
+        default="unet",
+        choices=["unet", "fdconv", "fdconv_capsule", "fdconv_rfapm", "caps_fdrnet_lite"],
+    )
     parser.add_argument("--cpu", action="store_true")
     return parser.parse_args()
 
