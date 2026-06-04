@@ -2,8 +2,14 @@ data/
 datasets/
 runs/
 outputs/
+uploads/
 weights_release/
 *.pt
 *.sqlite
 __pycache__/
 *.pyc
+
+# Frontend
+node_modules/
+frontend/dist/
+.vite/

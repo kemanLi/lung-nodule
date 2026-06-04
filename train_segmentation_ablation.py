@@ -27,6 +27,9 @@ def train_one(args: argparse.Namespace, experiment: str) -> None:
         batch=args.batch,
         lr=args.lr,
         weight_decay=args.weight_decay,
+        lr_factor=args.lr_factor,
+        lr_patience=args.lr_patience,
+        early_stop=args.early_stop,
         workers=args.workers,
         base=args.base,
         model_type=model_type,
@@ -42,10 +45,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data", default="datasets/segmentation")
     parser.add_argument("--project", default="runs/segmentation_ablation")
     parser.add_argument("--prefix", default="")
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch", type=int, default=32)
+    parser.add_argument("--epochs", type=int, default=300)
+    parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
+    parser.add_argument("--lr-factor", type=float, default=0.5)
+    parser.add_argument("--lr-patience", type=int, default=10)
+    parser.add_argument("--early-stop", type=int, default=20)
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--base", type=int, default=32)
     parser.add_argument("--cpu", action="store_true")

@@ -1,0 +1,4 @@
+fastapi
+uvicorn[standard]
+python-multipart
+flask>=3.0,<4

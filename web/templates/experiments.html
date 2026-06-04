@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}实验对比 · 肺结节系统{% endblock %}
+
+{% block content %}
+<h1>消融 / 评估结果</h1>
+<p class="subtitle">读取 <code>outputs/ablation_*.csv</code> 或 <code>runs/*/results.csv</code>。</p>
+
+<section class="card">
+  <h2>检测消融 {% if det_source %}<small>({{ det_source }})</small>{% endif %}</h2>
+  {% if det_rows %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for key in det_rows[0].keys() %}
+          <th>{{ key }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in det_rows %}
+        <tr>
+          {% for key, val in row.items() %}
+          <td>{{ val }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">暂无检测评估 CSV，请先运行 eval_detection_ablation.py。</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>分割消融 {% if seg_source %}<small>({{ seg_source }})</small>{% endif %}</h2>
+  {% if seg_rows %}
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          {% for key in seg_rows[0].keys() %}
+          <th>{{ key }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in seg_rows %}
+        <tr>
+          {% for key, val in row.items() %}
+          <td>{{ val }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">暂无分割评估 CSV。</p>
+  {% endif %}
+</section>
+{% endblock %}

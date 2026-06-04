@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}模型管理 · 肺结节系统{% endblock %}
+
+{% block content %}
+<h1>模型权重</h1>
+<p class="subtitle">扫描 <code>weights_release/</code> 与 <code>runs/</code> 下的可用权重。</p>
+
+<section class="card">
+  <h2>检测模型 (YOLO)</h2>
+  {% if det_models %}
+  <table class="data-table">
+    <thead><tr><th>名称</th><th>路径</th><th>大小 (MB)</th></tr></thead>
+    <tbody>
+      {% for m in det_models %}
+      <tr>
+        <td>{{ m.name }}</td>
+        <td class="mono">{{ m.path }}</td>
+        <td>{{ m.size_mb }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">未找到检测权重，请将 best.pt 放入 weights_release 或 runs/detection。</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>分割模型 (U-Net)</h2>
+  {% if seg_models %}
+  <table class="data-table">
+    <thead><tr><th>名称</th><th>路径</th><th>大小 (MB)</th></tr></thead>
+    <tbody>
+      {% for m in seg_models %}
+      <tr>
+        <td>{{ m.name }}</td>
+        <td class="mono">{{ m.path }}</td>
+        <td>{{ m.size_mb }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">未找到分割权重。</p>
+  {% endif %}
+</section>
+{% endblock %}

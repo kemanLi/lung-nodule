@@ -133,8 +133,8 @@ def segment_patch(patch: np.ndarray, weights: str | None = None) -> np.ndarray:
 def draw_results(image: np.ndarray, detections: list[Detection], masks: list[np.ndarray]) -> np.ndarray:
     canvas = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
     for idx, det in enumerate(detections):
-        cv2.rectangle(canvas, (det.x1, det.y1), (det.x2, det.y2), (0, 220, 255), 2)
-        cv2.putText(canvas, f"{det.confidence:.2f}", (det.x1, max(14, det.y1 - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 220, 255), 1)
+        cv2.rectangle(canvas, (det.x1, det.y1), (det.x2, det.y2), (0, 220, 255), 1)
+        cv2.putText(canvas, f"{det.confidence:.2f}", (det.x1, max(14, det.y1 - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 220, 255), 1)
         if idx < len(masks):
             mask = masks[idx]
             cx = (det.x1 + det.x2) // 2
@@ -145,7 +145,7 @@ def draw_results(image: np.ndarray, detections: list[Detection], masks: list[np.
             mx1, my1 = half - (cx - x1), half - (cy - y1)
             mx2, my2 = mx1 + (x2 - x1), my1 + (y2 - y1)
             local = mask[my1:my2, mx1:mx2] > 0
-            canvas[y1:y2, x1:x2][local] = (0, 80, 255)
+            canvas[y1:y2, x1:x2][local] = (120, 200, 80)
     return canvas
 
 
@@ -171,11 +171,15 @@ def run_pipeline(image_path: str, output_dir: str = "outputs", det_weights: str 
         patches.append(str(patch_path))
         masks.append(mask)
 
+    input_path = out_dir / "input.png"
+    cv2.imwrite(str(input_path), image)
+
     overlay = draw_results(image, detections, masks)
     overlay_path = out_dir / "overlay.png"
     cv2.imwrite(str(overlay_path), overlay)
     result = {
         "image_path": image_path,
+        "input_path": str(input_path),
         "overlay_path": str(overlay_path),
         "patch_paths": patches,
         "detections": [asdict(det) for det in detections],

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}历史记录 · 肺结节系统{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <h1>历史记录</h1>
+  <p class="subtitle">高置信度病例左侧红条标识，便于快速回访。</p>
+  <form class="search-form" method="get" action="{{ url_for('history') }}">
+    <input type="search" name="q" value="{{ search }}" placeholder="按文件名搜索…" />
+    <button type="submit" class="btn">搜索</button>
+  </form>
+</section>
+
+<section class="card">
+  {% if cases %}
+  <table class="data-table history-table">
+    <thead>
+      <tr>
+        <th>时间</th>
+        <th>图像</th>
+        <th>结节</th>
+        <th>置信度</th>
+        <th>检测权重</th>
+        <th>分割权重</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cases %}
+      <tr class="{% if c.max_confidence >= 0.6 %}row-alert{% endif %}">
+        <td>{{ c.created_at }}</td>
+        <td>{{ c.image_name }}{% if c.max_confidence >= 0.6 %} <span class="badge-attention">需关注</span>{% endif %}</td>
+        <td>{{ c.nodule_count }}</td>
+        <td class="conf-cell">{{ "%.0f"|format(c.max_confidence * 100) }}%</td>
+        <td class="mono">{{ c.det_weights or '—' }}</td>
+        <td class="mono">{{ c.seg_weights or '—' }}</td>
+        <td class="actions">
+          <a href="{{ url_for('case_detail', case_id=c.case_id) }}">查看</a>
+          <form method="post" action="{{ url_for('history_delete', case_id=c.case_id) }}" class="inline-form"
+                onsubmit="return confirm('确定删除这条记录？');">
+            <button type="submit" class="btn-link danger">删除</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">没有匹配的病例记录。</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}肺结节检测与分割系统{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body class="app-body">
+  <aside class="app-sidebar" aria-label="主导航">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">肺</span>
+      <span class="brand-text">结节 AI<br /><small>筛查工作站</small></span>
+    </a>
+    <nav class="side-nav">
+      <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}" title="工作台">
+        <span class="nav-icon">⌂</span><span class="nav-label">工作台</span>
+      </a>
+      <a href="{{ url_for('history') }}" class="{% if request.endpoint in ('history', 'case_detail') %}active{% endif %}" title="历史记录">
+        <span class="nav-icon">☰</span><span class="nav-label">历史记录</span>
+      </a>
+      <a href="{{ url_for('models_page') }}" class="{% if request.endpoint == 'models_page' %}active{% endif %}" title="模型管理">
+        <span class="nav-icon">◆</span><span class="nav-label">模型管理</span>
+      </a>
+      <a href="{{ url_for('experiments') }}" class="{% if request.endpoint == 'experiments' %}active{% endif %}" title="实验对比">
+        <span class="nav-icon">▣</span><span class="nav-label">实验对比</span>
+      </a>
+    </nav>
+    <div class="sidebar-foot">
+      <span>Flask · YOLO · U-Net</span>
+    </div>
+  </aside>
+
+  <div class="app-shell">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <main class="page {% block page_class %}{% endblock %}">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

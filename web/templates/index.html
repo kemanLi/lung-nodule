@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}工作台 · 肺结节系统{% endblock %}
+{% block page_class %}page-dashboard{% endblock %}
+
+{% block content %}
+<section class="dash-hero">
+  <div class="dash-hero-text">
+    <p class="eyebrow">AI 肺结节筛查</p>
+    <h1>上传 CT，一键完成检测与分割</h1>
+    <p>面向体检与随访场景：结果清晰标注，高置信度结节以鲜艳色框提示，便于患者与医生共同查看。</p>
+  </div>
+  <div class="dash-hero-stats">
+    <div class="stat-pill">
+      <span class="stat-num">{{ recent|length }}</span>
+      <span class="stat-lbl">最近记录</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-num">{{ det_models|length }}</span>
+      <span class="stat-lbl">检测模型</span>
+    </div>
+    <div class="stat-pill">
+      <span class="stat-num">{{ seg_models|length }}</span>
+      <span class="stat-lbl">分割模型</span>
+    </div>
+  </div>
+</section>
+
+<div class="dash-grid">
+  <section class="card dash-upload">
+    <h2>新建分析</h2>
+    <form class="analyze-form" action="{{ url_for('analyze') }}" method="post" enctype="multipart/form-data">
+      <div class="upload-zone">
+        <label for="file" class="upload-zone-label">
+          <span class="upload-icon">↑</span>
+          <span>点击选择 CT 图像</span>
+          <small>支持 PNG / JPG / DICOM 等</small>
+        </label>
+        <input type="file" id="file" name="file" accept=".png,.jpg,.jpeg,.bmp,.tif,.tiff,.dcm,.mhd" required />
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="det_weights">检测模型</label>
+          <select id="det_weights" name="det_weights">
+            <option value="">默认（weights_release）</option>
+            {% for m in det_models %}
+            <option value="{{ m.id }}">{{ m.name }} ({{ m.size_mb }} MB)</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="seg_weights">分割模型</label>
+          <select id="seg_weights" name="seg_weights">
+            <option value="">默认（weights_release）</option>
+            {% for m in seg_models %}
+            <option value="{{ m.id }}">{{ m.name }} ({{ m.size_mb }} MB)</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="conf">置信度阈值 <output id="conf-out">0.25</output></label>
+          <input type="range" id="conf" name="conf" min="0.05" max="0.95" step="0.05" value="0.25"
+                 oninput="document.getElementById('conf-out').value=this.value" />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg">开始分析</button>
+      <p class="hint">首次推理会加载模型，可能需要数十秒。</p>
+    </form>
+  </section>
+
+  <section class="card dash-recent">
+    <div class="card-head-row">
+      <h2>最近病例</h2>
+      <a href="{{ url_for('history') }}" class="text-link">查看全部 →</a>
+    </div>
+    {% if recent %}
+    <div class="case-cards">
+      {% for c in recent %}
+      {% set high = c.max_confidence >= 0.6 %}
+      <a href="{{ url_for('case_detail', case_id=c.case_id) }}" class="case-card {% if high %}case-card-alert{% endif %}">
+        <div class="case-card-top">
+          <span class="case-card-name">{{ c.image_name }}</span>
+          {% if high %}<span class="badge-attention">需关注</span>{% endif %}
+        </div>
+        <div class="case-card-metrics">
+          <span><strong>{{ c.nodule_count }}</strong> 结节</span>
+          <span class="conf-metric">{{ "%.0f"|format(c.max_confidence * 100) }}%</span>
+        </div>
+        <span class="case-card-time">{{ c.created_at }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">暂无记录，上传图像开始第一次分析。</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

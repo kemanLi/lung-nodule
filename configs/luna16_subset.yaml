@@ -14,9 +14,17 @@ preprocess:
   min_box_size: 8
 
 training:
-  detection_epochs: 80
-  detection_batch: 8
+  detection_epochs: 200
+  detection_batch: 16
   detection_imgsz: 640
-  segmentation_epochs: 100
-  segmentation_batch: 32
+  detection_lr0: 0.01
+  detection_lrf: 0.2
+  detection_momentum: 0.937
+  detection_weight_decay: 0.0005
+  segmentation_epochs: 300
+  segmentation_batch: 16
   segmentation_lr: 0.001
+  segmentation_weight_decay: 0.00001
+  segmentation_lr_factor: 0.5
+  segmentation_lr_patience: 10
+  segmentation_early_stop: 20

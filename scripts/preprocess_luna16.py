@@ -32,7 +32,19 @@ def save_yolo_sample(image: np.ndarray, label_rows: list[str], out_image: Path, 
 
 def make_label(cx: float, cy: float, diameter_px: float, width: int, height: int, min_box_size: int) -> str:
     box = max(float(diameter_px), float(min_box_size))
-    return f"0 {cx / width:.6f} {cy / height:.6f} {box / width:.6f} {box / height:.6f}"
+    half = box / 2.0
+    x1 = max(0.0, cx - half)
+    y1 = max(0.0, cy - half)
+    x2 = min(float(width - 1), cx + half)
+    y2 = min(float(height - 1), cy + half)
+    clipped_w = max(1.0, x2 - x1)
+    clipped_h = max(1.0, y2 - y1)
+    clipped_cx = x1 + clipped_w / 2.0
+    clipped_cy = y1 + clipped_h / 2.0
+    return (
+        f"0 {clipped_cx / width:.6f} {clipped_cy / height:.6f} "
+        f"{clipped_w / width:.6f} {clipped_h / height:.6f}"
+    )
 
 
 def split_for_subset(subset_name: str) -> str:

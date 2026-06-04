@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import csv
 from pathlib import Path
@@ -6,11 +8,15 @@ from pathlib import Path
 EXPERIMENTS = {
     "baseline": "yolo11n_baseline",
     "swin": "yolo11n_swin",
+    "kan": "yolo11n_kan",
     "mspa": "yolo11n_mspa",
+    "wo_swin": "yolo11n_kan_mspa",
     "swin_mspa": "yolo11n_swin_mspa",
+    "swin_kan": "yolo11n_swin_kan",
+    "ours": "skm_yolo",
 }
 
-ORDER = ("baseline", "swin", "mspa", "swin_mspa")
+ORDER = ("baseline", "swin", "kan", "mspa", "wo_swin", "swin_mspa", "swin_kan", "ours")
 
 
 def evaluate_weights(weights: Path, args: argparse.Namespace) -> dict[str, float | str]:

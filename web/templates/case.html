@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ case.image_name }} · 分析结果{% endblock %}
+{% block page_class %}page-case{% endblock %}
+
+{% block content %}
+<header class="case-topbar">
+  <div class="case-topbar-left">
+    <a href="{{ url_for('history') }}" class="back-link">← 返回</a>
+    <h1>{{ case.image_name }}</h1>
+    <span class="tag tag-{{ 'ok' if case.mode == 'model' else 'warn' }}">
+      {{ '模型推理' if case.mode == 'model' else '启发式演示' }}
+    </span>
+  </div>
+  <div class="kpi-strip">
+    <div class="kpi-card">
+      <span class="kpi-label">检出结节</span>
+      <span class="kpi-value">{{ case.nodule_count }}</span>
+    </div>
+    <div class="kpi-card kpi-alert">
+      <span class="kpi-label">最高置信度</span>
+      <span class="kpi-value">{{ "%.1f"|format(case.max_confidence * 100) }}%</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">分析时间</span>
+      <span class="kpi-value kpi-sm">{{ case.created_at }}</span>
+    </div>
+  </div>
+</header>
+
+<div class="workstation">
+  <aside class="ws-tools card">
+    <h2 class="ws-title">阅片工具</h2>
+    <div class="tool-group">
+      <span class="tool-label">底图（二选一，避免重复框线）</span>
+      <label class="tool-chip"><input type="radio" name="base" value="input" checked /> 原图 + 交互角标</label>
+      <label class="tool-chip"><input type="radio" name="base" value="overlay" /> AI 叠加（内置框/分割）</label>
+    </div>
+    <div class="tool-group">
+      <label class="tool-chip tool-chip-wide">
+        <input type="checkbox" id="show-boxes" checked /> 显示交互检测框
+      </label>
+      <p class="tool-hint">仅在「原图」上绘制细角标；叠加图已含 AI 绘制结果。</p>
+    </div>
+    <div class="legend-panel">
+      <h3>交互角标（仅原图）</h3>
+      <ul class="legend-list">
+        <li><span class="legend-swatch legend-high"></span> 需重点关注 ≥ 60%</li>
+        <li><span class="legend-swatch legend-mid"></span> 建议复核 40–60%</li>
+        <li><span class="legend-swatch legend-low"></span> 一般关注 &lt; 40%</li>
+        <li><span class="legend-swatch legend-selected"></span> 选中（洋红细实线）</li>
+      </ul>
+      <p class="legend-note">AI 叠加图内为 pipeline 青黄色框 + 分割着色，与上列角标分开显示。</p>
+    </div>
+  </aside>
+
+  <section class="ws-viewer card">
+    <div class="viewer-stage">
+      <div class="viewer-wrap" id="viewer-wrap"
+           data-overlay="{{ case.overlay_url }}"
+           data-input="{{ case.input_url }}"
+           data-detections='{{ case.detections | tojson }}'>
+        <p id="viewer-mode-hint" class="viewer-mode-hint" hidden></p>
+        <img id="viewer-img" src="{{ case.input_url }}" alt="分析结果" />
+        <canvas id="viewer-canvas"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <aside class="ws-findings card">
+    <div class="findings-head">
+      <h2>结节发现</h2>
+      <span class="findings-count">{{ case.nodule_count }} 处</span>
+    </div>
+    {% if case.detections %}
+    <ul class="nodule-list" id="nodule-list">
+      {% for d in case.detections %}
+      {% set conf = d.confidence | default(0) %}
+      {% if conf >= 0.6 %}
+        {% set level = 'high' %}
+        {% set level_label = '需重点关注' %}
+      {% elif conf >= 0.4 %}
+        {% set level = 'mid' %}
+        {% set level_label = '建议复核' %}
+      {% else %}
+        {% set level = 'low' %}
+        {% set level_label = '一般关注' %}
+      {% endif %}
+      <li class="nodule-item nodule-{{ level }}" data-index="{{ loop.index0 }}" data-level="{{ level }}">
+        <div class="nodule-item-top">
+          <span class="idx">结节 #{{ loop.index }}</span>
+          {% if level == 'high' %}<span class="badge-attention">需重点关注</span>{% endif %}
+        </div>
+        <div class="nodule-item-meta">
+          <span class="conf">{{ "%.0f"|format(conf * 100) }}%</span>
+          <span class="level-tag">{{ level_label }}</span>
+        </div>
+        <span class="box mono-sm">({{ d.x1 }}, {{ d.y1 }}) → ({{ d.x2 }}, {{ d.y2 }})</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">未检测到结节。</p>
+    {% endif %}
+  </aside>
+</div>
+
+{% if case.patch_urls or case.mask_urls %}
+<section class="gallery-strip card">
+  <h2 class="ws-title">局部放大与分割</h2>
+  <div class="gallery-grid">
+    {% if case.patch_urls %}
+    <div class="gallery-block">
+      <h3>Patch</h3>
+      <div class="thumb-row">
+        {% for url in case.patch_urls %}
+        <a href="{{ url }}" target="_blank" class="thumb-link"><img src="{{ url }}" alt="patch" /></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if case.mask_urls %}
+    <div class="gallery-block">
+      <h3>Mask</h3>
+      <div class="thumb-row">
+        {% for url in case.mask_urls %}
+        <a href="{{ url }}" target="_blank" class="thumb-link"><img src="{{ url }}" alt="mask" /></a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/viewer.js') }}"></script>
+{% endblock %}

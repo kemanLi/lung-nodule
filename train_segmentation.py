@@ -48,9 +48,16 @@ def train(args: argparse.Namespace) -> None:
     val_loader = DataLoader(val_ds, batch_size=args.batch, shuffle=False, num_workers=args.workers) if len(val_ds) else None
     model = build_segmentation_model(args.model_type, base=args.base).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode="min",
+        factor=args.lr_factor,
+        patience=args.lr_patience,
+    )
     bce = nn.BCEWithLogitsLoss()
 
     best_val = float("inf")
+    stale_epochs = 0
     out_dir = Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -77,21 +84,32 @@ def train(args: argparse.Namespace) -> None:
                     vals.append(float((bce(logits, mask) + dice_loss(logits, mask)).item()))
             val_loss = float(np.mean(vals))
 
-        print(f"epoch={epoch} train_loss={np.mean(losses):.4f} val_loss={val_loss:.4f}")
+        scheduler.step(val_loss)
+        lr = optimizer.param_groups[0]["lr"]
+        print(f"epoch={epoch} train_loss={np.mean(losses):.4f} val_loss={val_loss:.4f} lr={lr:.6g}")
         torch.save({"model": model.state_dict(), "base": args.base, "model_type": args.model_type}, out_dir / "last.pt")
         if val_loss <= best_val:
             best_val = val_loss
+            stale_epochs = 0
             torch.save({"model": model.state_dict(), "base": args.base, "model_type": args.model_type}, out_dir / "best.pt")
+        else:
+            stale_epochs += 1
+            if args.early_stop and stale_epochs >= args.early_stop:
+                print(f"early stopping at epoch={epoch}; best_val={best_val:.4f}")
+                break
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a small U-Net segmentation baseline.")
     parser.add_argument("--data", default="datasets/segmentation")
     parser.add_argument("--output", default="runs/segmentation/unet_mvp")
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch", type=int, default=32)
+    parser.add_argument("--epochs", type=int, default=300)
+    parser.add_argument("--batch", type=int, default=16)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
+    parser.add_argument("--lr-factor", type=float, default=0.5)
+    parser.add_argument("--lr-patience", type=int, default=10)
+    parser.add_argument("--early-stop", type=int, default=20)
     parser.add_argument("--workers", type=int, default=0)
     parser.add_argument("--base", type=int, default=32)
     parser.add_argument(
