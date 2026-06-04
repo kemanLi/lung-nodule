@@ -1,0 +1,25 @@
+path: datasets_D2_center_negative/detection
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: nodule
+
+preprocess:
+  hu_min: -1200
+  hu_max: 600
+  output_size: 640
+  adjacent_slices: 0
+  min_box_size: 8
+  negative_ratio: 1.0
+  min_z_distance: 10
+
+training:
+  detection_epochs: 200
+  detection_batch: 128
+  detection_imgsz: 640
+  detection_lr0: 0.01
+  detection_lrf: 0.2
+  detection_momentum: 0.937
+  detection_weight_decay: 0.0005
