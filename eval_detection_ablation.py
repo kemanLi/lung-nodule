@@ -47,6 +47,11 @@ def resolve_weights(args: argparse.Namespace, experiment: str) -> Path:
     return Path(args.project) / run_name / "weights" / "best.pt"
 
 
+def default_output_path(args: argparse.Namespace) -> Path:
+    stem = f"{args.prefix}_" if args.prefix else ""
+    return Path(args.project) / f"{stem}{args.split}_metrics.csv"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate detection ablations without KAN-C3k2.")
     parser.add_argument("--project", default="runs/detection_ablation")
@@ -54,7 +59,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--split", default="val")
     parser.add_argument("--prefix", default="")
-    parser.add_argument("--output", default="", help="Optional CSV path for ablation metrics.")
+    parser.add_argument(
+        "--output",
+        default="",
+        help="CSV path for ablation metrics. Defaults to <project>/<prefix><split>_metrics.csv.",
+    )
     return parser.parse_args()
 
 
@@ -75,8 +84,8 @@ if __name__ == "__main__":
             f"Params={row['params_m']:.2f}M"
         )
 
-    if parsed.output and rows:
-        output = Path(parsed.output)
+    if rows:
+        output = Path(parsed.output) if parsed.output else default_output_path(parsed)
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
