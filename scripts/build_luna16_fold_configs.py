@@ -46,14 +46,19 @@ def collect_images(detection_root: Path) -> list[tuple[str, Path]]:
     return items
 
 
-def rel_image_path(detection_root: Path, img_path: Path) -> str:
+def image_list_path(detection_root: Path, img_path: Path, absolute: bool) -> str:
+    if absolute:
+        return img_path.resolve().as_posix()
     return img_path.relative_to(detection_root).as_posix()
 
 
-def count_instances(detection_root: Path, rel_paths: list[str]) -> int:
+def count_instances(detection_root: Path, image_paths: list[str]) -> int:
     total = 0
-    for rel in rel_paths:
-        label = detection_root / rel.replace("images/", "labels/").replace(".png", ".txt")
+    for entry in image_paths:
+        img = Path(entry)
+        if not img.is_absolute():
+            img = detection_root / entry
+        label = Path(str(img).replace("/images/", "/labels/").replace("\\images\\", "\\labels\\")).with_suffix(".txt")
         if not label.exists():
             continue
         rows = [r.strip() for r in label.read_text(encoding="utf-8").splitlines() if r.strip()]
@@ -71,6 +76,7 @@ def build_folds(
     luna16_dir: Path,
     output_config_dir: Path,
     name_prefix: str,
+    absolute_paths: bool,
 ) -> list[dict[str, str | int | float]]:
     uid_to_subset = build_seriesuid_to_subset(luna16_dir)
     all_images = collect_images(detection_root)
@@ -82,7 +88,7 @@ def build_folds(
         if not subset:
             unknown += 1
             continue
-        by_subset[subset].append(rel_image_path(detection_root, img_path))
+        by_subset[subset].append(image_list_path(detection_root, img_path, absolute_paths))
 
     if unknown:
         print(f"warning: {unknown} images could not be mapped to a LUNA16 subset")
@@ -150,7 +156,13 @@ def main() -> None:
     )
     parser.add_argument("--luna16-dir", default="data/LUNA16")
     parser.add_argument("--project-root", default=".", help="Project root for relative paths in YAML.")
+    parser.add_argument(
+        "--relative-paths",
+        action="store_true",
+        help="Write paths relative to detection root (default: absolute paths in list files).",
+    )
     args = parser.parse_args()
+    use_absolute = not args.relative_paths
 
     root = Path(args.project_root).resolve()
     luna16 = (root / args.luna16_dir).resolve()
@@ -162,6 +174,7 @@ def main() -> None:
                 root / "datasets_D1_center" / "detection",
                 root / "configs" / "folds_D1_center",
                 "luna16_D1",
+                use_absolute,
             )
         )
     if args.variant in ("d0_adjacent", "both"):
@@ -170,6 +183,7 @@ def main() -> None:
                 root / "datasets" / "detection",
                 root / "configs" / "folds_D0_adjacent",
                 "luna16_D0",
+                use_absolute,
             )
         )
 
@@ -178,12 +192,12 @@ def main() -> None:
         "(checkpoint selection leakage if used for training)."
     )
 
-    for detection_root, config_dir, prefix in variants:
+    for detection_root, config_dir, prefix, abs_paths in variants:
         if not detection_root.exists():
             print(f"skip missing: {detection_root}")
             continue
-        print(f"\n=== {prefix} ({detection_root}) ===")
-        stats = build_folds(detection_root, luna16, config_dir, prefix)
+        print(f"\n=== {prefix} ({detection_root}) absolute_paths={abs_paths} ===")
+        stats = build_folds(detection_root, luna16, config_dir, prefix, abs_paths)
         csv_path = config_dir / f"{prefix}_fold_stats.csv"
         with csv_path.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=list(stats[0].keys()))

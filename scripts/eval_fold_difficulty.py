@@ -41,8 +41,12 @@ def main() -> None:
         val_list = data_root / cfg["val"]
         val_images = [ln for ln in val_list.read_text(encoding="utf-8").splitlines() if ln.strip()]
         instances = 0
-        for rel in val_images:
-            lbl = data_root / rel.replace("images/", "labels/").replace(".png", ".txt")
+        for entry in val_images:
+            img = Path(entry)
+            if not img.is_absolute():
+                img = data_root / entry
+            lbl = img.with_suffix(".txt")
+            lbl = Path(str(lbl).replace("/images/", "/labels/").replace("\\images\\", "\\labels\\"))
             if lbl.exists():
                 instances += sum(1 for ln in lbl.read_text(encoding="utf-8").splitlines() if ln.strip())
 
