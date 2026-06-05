@@ -1,7 +1,6 @@
 torch
 torchvision
 ultralytics
-pi-heif
 numpy
 pandas
 scipy
