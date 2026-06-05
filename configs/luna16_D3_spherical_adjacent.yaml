@@ -1,0 +1,15 @@
+path: datasets_D3_spherical_adjacent/detection
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: nodule
+
+preprocess:
+  hu_min: -1200
+  hu_max: 600
+  output_size: 640
+  adjacent_slices: 1
+  min_box_size: 8
+  spherical_adjacent: true
